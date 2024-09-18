@@ -1,6 +1,5 @@
 from RpiMotorLib import RpiMotorLib
 from threading import Thread
-from gpiozero import Servo
 import RPi.GPIO as GPIO
 from time import sleep
 import pigpio
@@ -9,21 +8,21 @@ import math
 import os
 
 
-class Gate(Thread):
+class Servo(Thread):
     def __init__(self, pin):
         super().__init__()
-        self.servo = pin
+        self.pin = pin
 
         self.pwm = pigpio.pi()
-        self.pwm.set_mode(self.servo, pigpio.OUTPUT)
-        self.pwm.set_PWM_frequency(self.servo, 50)
+        self.pwm.set_mode(pin, pigpio.OUTPUT)
+        self.pwm.set_PWM_frequency(pin, 50)
 
-    def test(self, band):
-        self.pwm.hardware_PWM(self.servo, 50, band)
-        sleep(1)
+    def drive(self, pwm):
+        self.pwm.hardware_PWM(self.pin, 50, pwm)
+
 
 class Motor:
-    def __init__(self, direction_pin, step_pin, file_path, gate):
+    def __init__(self, direction_pin, step_pin, file_path, servo_pin):
         GPIO.setmode(GPIO.BCM)
 
         self.direction_pin = direction_pin
@@ -34,8 +33,8 @@ class Motor:
 
         self.file_path = file_path
 
-        self.gate = gate 
-        self.gate.test(60000)
+        self.servo = Servo(servo_pin) 
+        self.servo.drive(60000)
 
         if os.path.exists(self.file_path):
             with open(self.file_path, "rb") as f:
@@ -49,18 +48,18 @@ class Motor:
         elif dir == 'forward': 
             self.stepper_motor.motor_go(True, "Full" , 2550, .0005, False, .05)
 
-    def go_to_bin(self, bin_num=None, hold=False):
-        if 0 <= bin_num <= 4:
-            delta = bin_num - self.current_bin
+    def go_to_bin(self, bin_position=None, hold=False):
+        if 0 <= bin_position <= 4:
+            delta = bin_position - self.current_bin
             try:
                 if delta:
                     self.stepper_motor.motor_go(math.copysign(1, delta) > 0, "Full" , abs(2550 * delta), .0005, False, .05)
-                    self.current_bin = bin_num
+                    self.current_bin = bin_position
 
                     if not hold:
-                        self.gate.servo.value = self.gate.position = -1
+                        self.servo.drive(20000)
                         sleep(1)
-                        self.gate.servo.value = self.gate.position = 1
+                        self.servo.drive(60000)
                         sleep(1)
 
                     with open(self.file_path, "wb") as f:
@@ -103,8 +102,7 @@ if __name__ == '__main__':
     #test_swap()
    
     #GPIO.cleanup()
-    gate = Gate(13)
-    motor = Motor(direction_pin=17, step_pin=18, file_path="./bin_position.pkl", gate=gate)
+    motor = Motor(direction_pin=17, step_pin=18, file_path="./bin_position.pkl", servo_pin=13)
     #test_hold2(60000)
     #try:
     #motor.go_to_bin(-1)
