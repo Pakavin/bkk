@@ -3,6 +3,7 @@ from threading import Thread
 from gpiozero import Servo
 import RPi.GPIO as GPIO
 from time import sleep
+import pigpio
 import pickle
 import math
 import os
@@ -11,11 +12,14 @@ import os
 class Gate(Thread):
     def __init__(self, pin):
         super().__init__()
-        self.servo = Servo(pin)
-        self.position = 1
+        self.servo = pin
 
-    def run(self):
-        self.servo.value = self.position
+        self.pwm = pigpio.pi()
+        self.pwm.set_mode(self.servo, pigpio.OUTPUT)
+        self.pwm.set_PWM_frequency(self.servo, 50)
+
+    def test(self, band):
+        self.pwm.hardware_PWM(self.servo, 50, band)
         sleep(1)
 
 class Motor:
@@ -31,7 +35,7 @@ class Motor:
         self.file_path = file_path
 
         self.gate = gate 
-        self.gate.start()
+        self.gate.test(60000)
 
         if os.path.exists(self.file_path):
             with open(self.file_path, "rb") as f:
@@ -78,21 +82,43 @@ def test_hold(position):
     while(True):
         servo.value = position
 
+def test_hold2(pos):
+    servo = 13
+
+    pwm = pigpio.pi()
+    pwm.set_mode(servo, pigpio.OUTPUT)
+    pwm.set_PWM_frequency(servo, 50)
+    
+    pwm.hardware_PWM(servo, 50, pos)
+
 
 if __name__ == '__main__':
+   
+    #GpioPins = [18, 23, 24, 25]
+    #mymotortest = RpiMotorLib.BYJMotor("MyMotorOne", "28BYJ")
+    #while(1):
+    #    mymotortest.motor_run(GpioPins , .001, 500, False, True, "half", .05)
+    #    sleep(1)
     #GPIO.cleanup()
     #test_swap()
-    #test_hold(1)
+   
     #GPIO.cleanup()
     gate = Gate(13)
     motor = Motor(direction_pin=17, step_pin=18, file_path="./bin_position.pkl", gate=gate)
-
+    #test_hold2(60000)
     #try:
     #motor.go_to_bin(-1)
     #motor.go_to_bin(4, hold=True)
-    motor.go_to_bin(0, hold=True)
-    motor.go_to_bin(2)
-    #motor.stepper_motor.motor_go(True, "Full" , 2550*2, .0005, False, .05)
+    #motor.go_to_bin(0, hold=True)
+    #motor.go_to_bin(2)
+    #while True:
+    motor.stepper_motor.motor_go(False, "Full" , 2550, .0005, False, .05)
+    motor.gate.pwm.hardware_PWM(motor.gate.servo, 50, 20000)
+    sleep(1)
+    motor.gate.pwm.hardware_PWM(motor.gate.servo, 50, 60000)
+    #    sleep(1)
+    #    motor.stepper_motor.motor_go(False, "Full" , 2550, .0005, True, .05)
+    #    sleep(1)
     #motor.go_to_bin(1)
     #motor.go_to_bin(2)
     #motor.go_to_bin(3)

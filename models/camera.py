@@ -9,7 +9,8 @@ class Camera:
         self.models = []
         for model_path in model_paths:
             model = YOLO(model_path)
-            class_names = model_path.replace(".pt", "").split('-')
+            class_names = os.path.splitext(os.path.basename(model_path))[0].split('-')
+            print(class_names)
             self.models.append((model, class_names))
 
         self.picam2 = Picamera2()
@@ -63,7 +64,7 @@ class Camera:
                         # confidence
                         confidence = math.ceil((box.conf[0]*100))/100
                         
-                        if confidence != 1:
+                        if confidence >= 0.5:
 
                             # put box in cam
                             cv2.rectangle(frame_bgr, (x1 + crop_x1, y1 + crop_y1), (x2 + crop_x1, y2 + crop_y1), (255, 0, 255), 3)
@@ -79,6 +80,7 @@ class Camera:
                             thickness = 2
 
                             cv2.putText(frame_bgr, model[1][cls] + f" {confidence}", org, font, fontScale, color, thickness)
+                            print(model[1][cls], confidence)
             
             cv2.imshow('Webcam', frame_bgr)
             if cv2.waitKey(1) == ord('q'):
