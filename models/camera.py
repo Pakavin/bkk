@@ -1,8 +1,13 @@
 from picamera2 import Picamera2
 from ultralytics import YOLO
+from time import sleep
 import math
 import cv2
 import os
+
+import torch.nn.functional as F
+import torch
+
 
 class Camera:
     def __init__(self, model_paths=None):
@@ -14,28 +19,53 @@ class Camera:
             self.models.append((model, class_names))
 
         self.picam2 = Picamera2()
+        self.camera_config = self.picam2.create_preview_configuration(main={"format": "RGB888"})
+        self.picam2.configure(self.camera_config)
         self.picam2.start()
 
-    def predict(self):
+    def predict(self, trial=3):
+        sleep(2)
         img = self.picam2.capture_array()
-        image_bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        #image_bgr = cv2.cvtColor(img, cv2.COLOR_YUV2BGR_YUY2)
+        image_bgr = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         prediction = []
+        for i in range(trial):
 
-        for model in self.models:
-            results = model[0](image_bgr, conf=0.5)
-            for result in results:
-                detections = result.boxes
+            for model in self.models:
+                results = model[0](image_bgr, conf=0.5)
+                for result in results:
+                    detections = result.boxes
 
-                for det in detections:
-                    prediction.append((model[1][int(det.cls[0].item())], det.conf[0].item()))
+                    for det in detections:
+                        prediction.append((model[1][int(det.cls[0].item())], det.conf[0].item()))
+
+        plastic_bottles_points = [cls[1] for cls in prediction if cls[0] == 'plastic_bottles']
+        print(plastic_bottles_points)
 
         return prediction
     
+    def view(self):
+        while True:
+            frame = self.picam2.capture_array()
+
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            #frame = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_YUY2)
+
+            print(frame.shape)
+
+            cv2.imshow('Webcam', frame)
+            if cv2.waitKey(1) == ord('q'):
+                break
+
+        cv2.destroyAllWindows()
+        self.picam2.stop()
+
     def stream(self):
         while True:
             frame = self.picam2.capture_array()
-            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            #frame_bgr = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_YUY2)
+            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             
             height, width = frame_bgr.shape[:2]
             new_width = int(width * 0.8)
@@ -89,5 +119,6 @@ class Camera:
 if __name__ == '__main__':
     #x = Camera("/home/admin/Desktop/bin-system/resources/Glass_Bottles-can-plastic_bottles.pt")
     x = Camera(model_paths=["/home/admin/Desktop/bin-system/resources/dry waste-wet waste.pt", "/home/admin/Desktop/bin-system/resources/Glass_Bottles-can-plastic_bottles.pt"])
-    x.stream()
+    #x.stream()
+    print(x.predict())
     #print(y)

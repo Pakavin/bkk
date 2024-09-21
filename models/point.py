@@ -15,7 +15,7 @@ class PointTable:
             self.summary = "ขยะเปียก"
             self.bin = 4
         else:
-            if "can" in cls:
+            if "can" in cls: 
                 self.point = 300
                 self.summary = "กระป๋อง"
                 self.bin = 0

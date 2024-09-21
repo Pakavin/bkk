@@ -10,13 +10,24 @@ class WaitController:
 
         self.state = "AI Analyzing."
 
-        self.predict = threading.Thread(target=self.predict_thread)
+        self.predict = threading.Thread(target=self.mockup, daemon=True)
         self.predict.start()
 
         self._stop_event = threading.Event()
 
         self.animate_thread = threading.Thread(target=self.animation, daemon=True)
         self.animate_thread.start()
+
+
+    def mockup(self):
+        point = self.model.point_table.calculate([('plastic_bottles', 1.0)])
+        self.model.point_table.total_points += point
+        print("point =>", point)
+
+        self._stop_event.set()
+
+        self.view_continue()
+
 
     def animation(self):
         index = 0

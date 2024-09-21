@@ -1,4 +1,6 @@
-import customtkinter as ctk 
+import customtkinter as ctk
+from time import sleep
+import threading
 
 class ConditionController:
     def __init__(self, model, view, routes):
@@ -19,7 +21,7 @@ class ConditionController:
         self.frame.countdown_lbl = ctk.CTkLabel(self.frame, text=f"{self.count} วิ", text_color="black", fg_color="white", font=ctk.CTkFont(size=42))
         self.frame.countdown_lbl.place(x=710, y=250, anchor="center")
 
-        self.check()
+        print("init coundown")
         self.countdown(self.count)
 
     def _bind(self, routes):
@@ -27,6 +29,21 @@ class ConditionController:
         self.resume = routes[1]
         self.frame.btn.configure(command=routes[2])
     
+    def is_widget_visible(self):
+        while True:
+            x = False
+            try:
+                x = bool(self.view.root.winfo_viewable())
+            except:
+                pass
+            
+            if(x):
+                sleep(5)
+                self.check()
+                self.countdown(self.count)
+
+            sleep(1)
+
     def check(self):
         try:
             active = self.model.switch.check()

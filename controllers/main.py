@@ -23,5 +23,5 @@ class Controller:
         self.current_controller = controller[0](self.model, self.view, controller[1])
 
     def start(self):
-        self.switch("setup") 
+        self.switch("idle") 
         self.view.mainloop()

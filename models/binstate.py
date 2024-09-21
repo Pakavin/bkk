@@ -6,6 +6,9 @@ class BinState:
         super().__init__()
         self.ir_sensors = ir_sensors
 
+    def classify(prediction):
+        cls = [p[0] for p in prediction]
+
     def update_bin_state(self):
         is_bin_full = [bool(sr.check()) for sr in self.ir_sensors]
         return is_bin_full

@@ -7,18 +7,53 @@ import pickle
 import math
 import os
 
+from adafruit_servokit import ServoKit
 
-class Servo(Thread):
+
+def test_kit():
+    kit = ServoKit(channels=16)
+
+    while True:
+        kit.servo[0].angle = 90
+        sleep(1)
+        kit.servo[0].angle = 180
+        sleep(1)
+
+
+def test_write():
+    GPIO.setmode(GPIO.BCM)
+    GPIO_PIN = 12
+    GPIO.setup(GPIO_PIN, GPIO.OUT)
+
+    try:
+        while True:
+            # Set the pin HIGH
+            GPIO.output(GPIO_PIN, GPIO.HIGH)
+            print("Pin is set HIGH")
+            
+            sleep(2)  # Wait for 2 seconds
+            
+            # Set the pin LOW
+            GPIO.output(GPIO_PIN, GPIO.LOW)
+            print("Pin is set LOW")
+            
+            sleep(2)  # Wait for 2 seconds
+
+    finally:
+        # Clean up GPIO settings
+        GPIO.cleanup()
+
+
+
+class Servo:
     def __init__(self, pin):
         super().__init__()
         self.pin = pin
 
         self.pwm = pigpio.pi()
         self.pwm.set_mode(pin, pigpio.OUTPUT)
+        self.pwm.set_PWM_range(pin, 20000)
         self.pwm.set_PWM_frequency(pin, 50)
-
-    def drive(self, pwm):
-        self.pwm.hardware_PWM(self.pin, 50, pwm)
 
 
 class Motor:
@@ -34,7 +69,7 @@ class Motor:
         self.file_path = file_path
 
         self.servo = Servo(servo_pin) 
-        self.servo.drive(60000)
+        self.servo.pwm.set_servo_pulsewidth(self.servo.pin, 730)
 
         if os.path.exists(self.file_path):
             with open(self.file_path, "rb") as f:
@@ -42,11 +77,17 @@ class Motor:
         else:
             self.current_bin = 3
 
-    def go(self, dir):
-        if dir == 'backward':
+    def go(self, dir=None, hold=False):
+        if dir == 'backward' or dir == 'b':
             self.stepper_motor.motor_go(False, "Full" , 2550, .0005, False, .05)
-        elif dir == 'forward': 
+        elif dir == 'forward' or dir == 'f ': 
             self.stepper_motor.motor_go(True, "Full" , 2550, .0005, False, .05)
+
+        if not hold:
+            self.servo.pwm.set_servo_pulsewidth(self.servo.pin, 0)
+            sleep(1)
+            self.servo.pwm.set_servo_pulsewidth(self.servo.pin, 730)
+            sleep(1)
 
     def go_to_bin(self, bin_position=None, hold=False):
         if 0 <= bin_position <= 4:
@@ -57,38 +98,48 @@ class Motor:
                     self.current_bin = bin_position
 
                     if not hold:
-                        self.servo.drive(20000)
+                        self.servo.pwm.set_servo_pulsewidth(self.servo.pin, 730)
                         sleep(1)
-                        self.servo.drive(60000)
+                        self.servo.pwm.set_servo_pulsewidth(self.servo.pin, 0)
                         sleep(1)
 
                     with open(self.file_path, "wb") as f:
                         pickle.dump(self.current_bin, f)
-
             except:
                 pass
 
 def test_swap():
-    servo = Servo(13)
-    while(True):
-        servo.min()
-        sleep(1)
-        servo.max()
-        sleep(1)
+    servo = TorqueServo(12)
+    while False:
+        servo.drive(650)
+        sleep(2)
+        servo.pwm.set_PWM_dutycycle( servo.pin, 0 )
+        servo.pwm.set_PWM_frequency( servo.pin, 0 )
+        sleep(2)
+        #servo.drive(500)
+        #sleep(2)
+    servo.drive(650)
 
 def test_hold(position):
     servo = Servo(13)
     while(True):
         servo.value = position
 
-def test_hold2(pos):
-    servo = 13
+servo = 12
 
-    pwm = pigpio.pi()
-    pwm.set_mode(servo, pigpio.OUTPUT)
-    pwm.set_PWM_frequency(servo, 50)
+pwm = pigpio.pi()
+pwm.set_mode(servo, pigpio.OUTPUT)
+pwm.set_PWM_frequency(servo, 50)
     
-    pwm.hardware_PWM(servo, 50, pos)
+
+def test_hold2(pos):
+    while(True):
+        pwm.set_servo_pulsewidth(servo, 0)
+        sleep(1)
+        pwm.set_servo_pulsewidth(servo, 2500)
+        sleep(1)
+    #pwm.set_PWM_dutycycle( servo, 2000 )
+    #pwm.set_PWM_frequency( servo, 0 )
 
 
 if __name__ == '__main__':
@@ -99,21 +150,32 @@ if __name__ == '__main__':
     #    mymotortest.motor_run(GpioPins , .001, 500, False, True, "half", .05)
     #    sleep(1)
     #GPIO.cleanup()
-    #test_swap()
+    test_hold2(5)
    
     #GPIO.cleanup()
-    motor = Motor(direction_pin=17, step_pin=18, file_path="./bin_position.pkl", servo_pin=13)
-    #test_hold2(60000)
+    #motor = Motor(direction_pin=17, step_pin=18, file_path="./bin_position.pkl", servo_pin=12)
+    #x = 31000
+    #while True:
+    #    print(x)
+    #while True:
+    #test_hold2(0)
+    #test_write()
+    #sleep(1)
+    #test_hold2(750)
+        #x -= 100
+    #    sleep(2)
     #try:
     #motor.go_to_bin(-1)
     #motor.go_to_bin(4, hold=True)
     #motor.go_to_bin(0, hold=True)
     #motor.go_to_bin(2)
-    #while True:
-    motor.stepper_motor.motor_go(False, "Full" , 2550, .0005, False, .05)
-    motor.gate.pwm.hardware_PWM(motor.gate.servo, 50, 20000)
-    sleep(1)
-    motor.gate.pwm.hardware_PWM(motor.gate.servo, 50, 60000)
+    #while True: 
+    #motor.stepper_motor.motor_go(True, "Full" , 2550*4, .0005, True, .05)
+    #motor.go("backward")
+    #motor.go("backward")
+    #motor.servo.drive(20000)
+    #sleep(1)
+    #motor.gate.pwm.hardware_PWM(motor.gate.servo, 50, 60000)
     #    sleep(1)
     #    motor.stepper_motor.motor_go(False, "Full" , 2550, .0005, True, .05)
     #    sleep(1)

@@ -1,5 +1,7 @@
 import customtkinter as ctk 
 from PIL import Image
+import threading
+from time import sleep
 
 class IdleController:
     def __init__(self, model, view, routes):
@@ -21,10 +23,27 @@ class IdleController:
 
         #self.report_bin_status()
         #self.check()
+        self.job = threading.Thread(target=self.is_widget_visible)
+        self.job.start()
 
     def _bind(self, routes):
         self.view_wait = routes[0]
         self.setup = routes[1]
+
+    def is_widget_visible(self):
+        while True:
+            x = False
+            try:
+                x = bool(self.view.root.winfo_viewable())
+            except:
+                pass
+            
+            if(x):
+                self.view.root.after(2000, self.view_wait)
+
+    def mockup(self):
+        print("=> Okay")
+        self.view_wait()
 
     def check(self):
         try:
