@@ -37,7 +37,7 @@ class SetupView(ctk.CTkFrame):
         super().__init__(*args, **kwargs)
 
         img = Image.open("./resources/setup-bg.jpg")
-        bg_img = ctk.CTkImage(img, size=(800, 480))
+        bg_img = ctk.CTkImage(img, size=(self.winfo_screenwidth(), self.winfo_screenheight()))
         self.bg = ctk.CTkLabel(self, text="", image=bg_img)
         self.bg.place(x=0, y=0)
 

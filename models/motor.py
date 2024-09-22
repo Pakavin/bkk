@@ -150,10 +150,10 @@ if __name__ == '__main__':
     #    mymotortest.motor_run(GpioPins , .001, 500, False, True, "half", .05)
     #    sleep(1)
     #GPIO.cleanup()
-    test_hold2(5)
+    #test_hold2(5)
    
     #GPIO.cleanup()
-    #motor = Motor(direction_pin=17, step_pin=18, file_path="./bin_position.pkl", servo_pin=12)
+    motor = Motor(direction_pin=17, step_pin=18, file_path="./bin_position.pkl", servo_pin=12)
     #x = 31000
     #while True:
     #    print(x)
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     #motor.go_to_bin(0, hold=True)
     #motor.go_to_bin(2)
     #while True: 
-    #motor.stepper_motor.motor_go(True, "Full" , 2550*4, .0005, True, .05)
+    motor.stepper_motor.motor_go(True, "Full" , 2550, .0005, True, .05)
     #motor.go("backward")
     #motor.go("backward")
     #motor.servo.drive(20000)

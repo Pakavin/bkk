@@ -1,6 +1,7 @@
-from models.main import Model
-from views.main import View
-from controllers.main import Controller
+from model import Model
+from view import View
+from controller import Controller
+
 
 def main():
     model = Model()
